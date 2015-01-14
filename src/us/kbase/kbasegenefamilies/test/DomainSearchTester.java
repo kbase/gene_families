@@ -69,7 +69,8 @@ public class DomainSearchTester {
 	//findMSA(client);
 	testSpeed2(client);
     }
-	
+
+    /*
     private static void runDomainSearchLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
 	String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
 	String outId = "TempDomains";
@@ -113,7 +114,9 @@ public class DomainSearchTester {
 	}
 	pw.println("-= Domains =-");
 	for (DomainClusterStat dcs : dcsr.getDomainClusterStatistics().values()) {
-	    pw.println("Domain " /* + dcs.getDomainModelRef() + ", "*/ + dcs.getName() + ": g=" + dcs.getGenomes() + ", " +
+	    pw.println("Domain "
+	    //  + dcs.getDomainModelRef() + ", "
+	    + dcs.getName() + ": g=" + dcs.getGenomes() + ", " +
 		       "f=" + dcs.getFeatures() + ", d=" + dcs.getDomains());
 	}
 	pw.close();
@@ -149,6 +152,7 @@ public class DomainSearchTester {
 	    Thread.sleep(12000);
 	}
     }
+*/
 	
     private static String runDomainSearchOnly(WorkspaceClient client, String token) throws Exception {
 	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
@@ -182,7 +186,8 @@ public class DomainSearchTester {
 	}
 	return ret;
     }
-	
+
+/*
     private static void runDomainClustersExtension(WorkspaceClient client, String token, String annotRef) throws Exception {
 	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
 	gf.setIsInsecureHttpConnectionAllowed(true);
@@ -213,6 +218,7 @@ public class DomainSearchTester {
 	    Thread.sleep(12000);
 	}
     }
+*/
 	
     private static void findMSA(WorkspaceClient wc) throws Exception {
 	String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;

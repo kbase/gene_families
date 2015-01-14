@@ -15,7 +15,7 @@ GLASSFISH_HOME ?= $(DEPLOY_RUNTIME)/glassfish3
 ASADMIN = $(GLASSFISH_HOME)/glassfish/bin/asadmin
 ANT = ant
 
-default: compile
+default: compile build-docs
 
 deploy-all: deploy
 
@@ -27,19 +27,39 @@ test: test-all
 test-all: test-java
 
 test-client:
-	@echo "No tests for client"
+	@echo "All tests are in java; make test-java"
 
 test-service:
-	@echo "No tests for service yet"
+	@echo "All tests are in java; make test-java"
 
 test-scripts:
-	@echo "No tests for scripts"
+	@echo "No scripts"
 
 test-java:  prepare-thirdparty-dbs
 	$(ANT) test
 
 compile: src
 	$(ANT) war
+
+setup-lib-dir:
+	mkdir -p lib/biokbase/$(SERVICE_NAME)
+	mkdir -p lib/javascript/$(SERVICE_NAME)
+
+compile-typespec: setup-lib-dir
+	compile_typespec \
+		--client Bio::KBase::$(SERVICE_NAME)::Client \
+		--py biokbase/$(SERVICE_NAME)/Client \
+		--js javascript/$(SERVICE_NAME)/Client \
+		--url https://kbase.us/services/gene_families \
+		$(SERVICE_NAME).spec lib
+	rm -f lib/$(SERVICE_NAME)*.py
+	rm -f lib/$(SERVICE_NAME)*.pm
+
+build-docs: compile-typespec
+	mkdir -p docs
+	pod2html --infile=lib/Bio/KBase/$(SERVICE_NAME)/Client.pm --outfile=docs/$(SERVICE_NAME).html
+	rm -f pod2htmd.tmp
+	$(ANT) javadoc
 
 src: KBaseGeneFamilies.spec
 	./generate_java_classes.sh
@@ -49,6 +69,9 @@ download-thirdparty-bins:
 
 prepare-thirdparty-dbs:	download-thirdparty-bins
 	./prepare_3rd_party_dbs.sh
+
+prepare-library-objects: prepare-thirdparty-dbs compile
+	java -jar dist/($SERVICE_NAME).jar
 
 prepare-deploy-target:	prepare-thirdparty-dbs
 
@@ -84,7 +107,7 @@ deploy-scripts:
 	@echo "No deployment for scripts"
 
 deploy-docs:
-	$(ANT) docs
+	$(ANT) javadoc
 	rsync -a ./docs $(SERVICE_DIR)
 
 clean:

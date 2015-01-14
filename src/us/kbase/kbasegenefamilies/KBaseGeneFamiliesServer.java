@@ -38,8 +38,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     private static TaskQueue taskHolder = null;
     private static TaskQueueConfig taskConfig = null;
     
-	private static final String defaultWsUrl = "http://dev04.berkeley.kbase.us:7058";
-	//private static final String defaultWsUrl = "https://kbase.us/services/ws/";
+    private static final String defaultWsUrl = "https://kbase.us/services/ws/";
     private static final String defaultUjsUrl = "https://kbase.us/services/userandjobstate/";
     
     public static final String SYS_PROP_KB_DEPLOYMENT_CONFIG = "KB_DEPLOYMENT_CONFIG";
@@ -51,7 +50,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static final String CFG_PROP_TEMP_DIR = "scratch";
     public static final String CFG_PROP_DATA_DIR = "data.dir";
     
-    public static final String SERVICE_VERSION = "1.0";
+    public static final String SERVICE_VERSION = "1.0.0";
     public static final String SERVICE_DEPLOYMENT_NAME = "gene_families";
     public static final String SERVICE_REGISTERED_NAME = "KBaseGeneFamilies";
 
@@ -158,34 +157,18 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     }
 
     /**
-     * <p>Original spec-file function name: construct_domain_clusters</p>
+     * <p>Original spec-file function name: version</p>
      * <pre>
+     * returns version number of service
      * </pre>
-     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.ConstructDomainClustersParams ConstructDomainClustersParams}
-     * @return   parameter "job_id" of String
+     * @return   parameter "version" of String
      */
-    @JsonServerMethod(rpc = "KBaseGeneFamilies.construct_domain_clusters")
-    public String constructDomainClusters(ConstructDomainClustersParams params, AuthToken authPart) throws Exception {
+    @JsonServerMethod(rpc = "KBaseGeneFamilies.version")
+    public String version() throws Exception {
         String returnVal = null;
-        //BEGIN construct_domain_clusters
-        returnVal = getTaskQueue().addTask(params, authPart.toString());
-        //END construct_domain_clusters
-        return returnVal;
-    }
-
-    /**
-     * <p>Original spec-file function name: search_domains_and_construct_clusters</p>
-     * <pre>
-     * </pre>
-     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams SearchDomainsAndConstructClustersParams}
-     * @return   parameter "job_id" of String
-     */
-    @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains_and_construct_clusters")
-    public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params, AuthToken authPart) throws Exception {
-        String returnVal = null;
-        //BEGIN search_domains_and_construct_clusters
-        returnVal = getTaskQueue().addTask(params, authPart.toString());
-        //END search_domains_and_construct_clusters
+        //BEGIN version
+	returnVal = SERVICE_VERSION;
+        //END version
         return returnVal;
     }
 

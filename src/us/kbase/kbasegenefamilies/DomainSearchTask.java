@@ -68,7 +68,7 @@ public class DomainSearchTask {
 	// collect one set of annotations per library
 	for (String id : domainLibMap.values()) {
 	    DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
-	    DomainAnnotation results = runDomainSearch(genome, genomeRef, dl);
+	    DomainAnnotation results = runDomainSearch(genome, genomeRef, domainModelSetRef, dl);
 
 	    // combine all the results into one object
 	    if (rv==null)
@@ -89,6 +89,8 @@ public class DomainSearchTask {
 			    DomainAnnotation target) throws Exception {
 	if (!source.getGenomeRef().equals(target.getGenomeRef()))
 	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different genomes can't be combined");
+	if (!source.getUsedDmsRef().equals(target.getUsedDmsRef()))
+	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different domain model sets can't be combined");
 	
 	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> sourceData = source.getData();
 	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> targetData = target.getData();
@@ -106,12 +108,13 @@ public class DomainSearchTask {
     }
 
     /**
-       Runs a domain search on a single genome, returning annotations
-       and alignments.  Takes a map of individual models and a model
-       db file as input.
+       Runs a domain search on a single genome, returning annotations.
+       This works on a single library, but needs metadata (references
+       to Genome and DomainModelSet) to populate the annotation object.       
     */
     public DomainAnnotation runDomainSearch(Genome genome,
 					    String genomeRef,
+					    String domainModelSetRef,
 					    DomainLibrary dl) throws Exception {
 						
 	String genomeName = genome.getScientificName();
@@ -165,7 +168,10 @@ public class DomainSearchTask {
 		    long stop = loc.getE3().equals("-") ? loc.getE2() : (loc.getE2() + loc.getE4() - 1);
 		    long dir = loc.getE3().equals("-") ? -1 : +1;
 		    prots.add(new Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>()
-			      .withE1(feat.getId()).withE2(start).withE3(stop).withE4(dir)
+			      .withE1(feat.getId())
+			      .withE2(start)
+			      .withE3(stop)
+			      .withE4(dir)
 			      .withE5(new TreeMap<String, List<Tuple5<Long, Long, Double, Double, Double>>>()));
 		}
 	    }
@@ -206,8 +212,14 @@ public class DomainSearchTask {
 		outFile = runRpsBlast(dbFile, fastaFile);
 		RpsBlastParser.processRpsOutput(outFile, new RpsBlastParser.RpsBlastCallback() {
 			@Override
-			    public void next(String query, String subject, int qstart, String qseq,
-					     int sstart, String sseq, String evalue, double bitscore,
+			    public void next(String query,
+					     String subject,
+					     int qstart,
+					     String qseq,
+					     int sstart,
+					     String sseq,
+					     String evalue,
+					     double bitscore,
 					     double ident) throws Exception {
 			    Long modelLength = modelNameToLength.get(subject);
 			    if (modelLength == null)
@@ -325,6 +337,7 @@ public class DomainSearchTask {
 	    
 	    DomainAnnotation rv = new DomainAnnotation()
 		.withGenomeRef(genomeRef)
+		.withUsedDmsRef(domainModelSetRef)
 		.withData(contig2prots)
 		.withContigToSizeAndFeatureCount(contigSizes)
 		.withFeatureToContigAndIndex(featIdToContigFeatIndex);
@@ -337,7 +350,6 @@ public class DomainSearchTask {
 	}
     }
 
-    
     /**
        Formats a library made from a user-defined set of SMP (PSSM)
        files.  Not used by current code, which requires a pre-formatted
@@ -438,6 +450,11 @@ public class DomainSearchTask {
 	return ret;
     }
 
+    /**
+       gets all the required library files out of shock.  Only
+       supports publicly readable libraries for now (private libraries
+       cannot currently be uploaded)
+    */
     private void prepareLibraryFiles(DomainLibrary dl) throws Exception {
 	BasicShockClient client = new BasicShockClient(new URL(shockUrl));
 	File dir = getDomainsDir();

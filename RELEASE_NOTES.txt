@@ -1,0 +1,13 @@
+OVERVIEW
+-----------------------------------------
+This KBase service provides methods for finding (protein) domains in
+genomes.
+
+
+VERSION: 1.0.0 (Released 1/14/2015)
+------------------------------------------
+NEW FEATURES:
+-This is the first public release of the GeneFamilies Service, all methods are new.
+
+UPDATED FEATURES / MAJOR BUG FIXES:
+-none.

@@ -19,7 +19,7 @@ import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
 
 /**
-   Tests for setting up sample db and annotating E. coli
+   Tests for setting up sample db and annotating E. coli locally
 */
 public class EColiTest {
     private static final String wsUrl = "https://kbase.us/services/ws/";
@@ -107,8 +107,8 @@ public class EColiTest {
     /**
        Check that we can annotate E. coli with TIGRFAMs.  Takes ~12 min
        on a 2-CPU Magellan instance.
-    */
     @Test
+    */
 	public void searchEColiHMM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -133,8 +133,8 @@ public class EColiTest {
     /**
        Check that we can annotate E. coli with all domain libraries.
        Takes ~65 min on a 2-CPU Magellan instance.
-    */
     @Test
+    */
 	public void searchEColiAll() throws Exception {
 
 	AuthToken token = getDevToken();
