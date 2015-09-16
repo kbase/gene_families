@@ -41,6 +41,7 @@
     <include name="apache_commons/commons-codec-1.8.jar"/>
     <include name="apache_commons/commons-io-2.4.jar"/>
     <include name="apache_commons/commons-lang3-3.1.jar"/>
+    <include name="derby/derby-10.10.1.1.jar"/>
   </fileset>
 
   <path id="compile.classpath">
