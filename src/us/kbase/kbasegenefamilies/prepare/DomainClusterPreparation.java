@@ -1,5 +1,9 @@
 package us.kbase.kbasegenefamilies.prepare;
 
+/**
+   This class no longer compiles with the new typespec, so everything
+   has been commented out as of 1/14/15 --JMC
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -512,7 +516,6 @@ public class DomainClusterPreparation {
     private static Set<String> getRestrictedDomainRefs(WorkspaceClient client) throws Exception {
 	Set<String> ret = new HashSet<String>();
 	DomainModelSet rootSet = getObject(client, domainWsName + "/" + cogPfamDomainSetObjectName, DomainModelSet.class);
-	/*
 	for (String parRef : rootSet.getParentRefs()) {
 	    DomainModelSet subSet = getObject(client, parRef, DomainModelSet.class);
 	    if (subSet.getSetName().endsWith(" pfam") || subSet.getSetName().endsWith(" COG")) {
@@ -520,7 +523,6 @@ public class DomainClusterPreparation {
 		ret.addAll(subSet.getDomainModelRefs());
 	    }
 	}
-	*/
 	return ret;
     }
 	
@@ -609,3 +611,4 @@ public class DomainClusterPreparation {
 	}
     }
 }
+*/

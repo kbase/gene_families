@@ -27,7 +27,7 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import us.kbase.kbasegenefamilies.DomainAlignments;
+// import us.kbase.kbasegenefamilies.DomainAlignments;
 import us.kbase.kbasegenefamilies.DomainAnnotation;
 import us.kbase.kbasegenefamilies.DomainModelSet;
 import us.kbase.kbasegenefamilies.DomainModelType;
@@ -50,10 +50,10 @@ public class NerscClusterDomainSearcher {
     private static final String defaultDomainSetObjectName = "BacterialProteinDomains.set";
     private static final String cogPfamDomainSetObjectName = "CogAndPfamDomains.set";
     private static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
+    // private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
 
     public static void main(String[] args) throws Exception {
-	searchDomains(args);
+	// searchDomains(args);
 	//cacheDomainAnnotation(args);
 	//tokenMany(args);
 	//wsMany(args);
@@ -152,7 +152,8 @@ public class NerscClusterDomainSearcher {
 	//getDomainSetRef(client(props));
 	GenomeAnnotationChache.cacheDomainAnnotation(props);
     }
-	
+
+    /*
     private static void searchDomains(String[] args) throws Exception {
 	if (args.length < 1 || args.length > 3) {
 	    System.err.println("Usage: <program> <config_file> [{<genome_ref_list_file> | <core_count> <out_dir>}]");
@@ -263,6 +264,7 @@ public class NerscClusterDomainSearcher {
 	    }
 	}
     }
+    */
 
     private static String getDomainSetRef(WorkspaceClient client) throws Exception {
 	//return domainWsName + "/" + defaultDomainSetObjectName;

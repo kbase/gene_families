@@ -15,15 +15,16 @@ import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
 import us.kbase.shock.client.*;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 
 public class DomainModelLibPreparation {
-    private static final String shockUrl = "https://kbase.us/services/shock-api/";
-    private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String domainWsName = "KBasePublicGeneDomains";
-    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
-    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
+    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary";
+    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
 
     public static void main(String[] args) throws Exception {
+	checkOrCreateWorkspace();
+	
 	parseDomainLibrary("COGs-CDD-3.12",
 			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
 			   "/kb/dev_container/modules/gene_families/data/db/Cog",
@@ -65,7 +66,22 @@ public class DomainModelLibPreparation {
 			   "TIGR",
 			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
 			   
-	String[] libraries = new String[] {"SMART-6.0-CDD-3.12"};
+	String[] libraries = new String[] {"COGs-CDD-3.12"};
+	
+	makeDomainModelSet("COGs-only",
+			   libraries);
+
+	libraries[0] = "CDD-NCBI-curated-3.12";
+	
+	makeDomainModelSet("NCBI-CDD-only",
+			   libraries);
+	
+	libraries[0] = "Pfam-27.0";
+	
+	makeDomainModelSet("Pfam-only",
+			   libraries);
+	
+	libraries[0] = "SMART-6.0-CDD-3.12";
 	
 	makeDomainModelSet("SMART-only",
 			   libraries);
@@ -83,6 +99,21 @@ public class DomainModelLibPreparation {
 	
 	makeDomainModelSet("All",
 			   libraries);
+    }
+
+    /**
+       make the public workspace, if it does not already exist on this
+       version of the service
+    */
+    private static void checkOrCreateWorkspace() throws Exception {
+	WorkspaceClient wc = createWsClient(getDevToken());
+	try {
+	    wc.getWorkspaceInfo(new WorkspaceIdentity().withWorkspace(domainWsName));
+	}
+	catch (Exception e) {
+	    System.err.println(e.getMessage());
+	    wc.createWorkspace(new CreateWorkspaceParams().withGlobalread("r").withWorkspace(domainWsName));
+	}
     }
 
     /**
@@ -203,6 +234,11 @@ public class DomainModelLibPreparation {
 
 	// store them all in Shock
 	AuthToken token = getDevToken();
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String shockUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_SHOCK_SRV_URL);
+	if (shockUrl==null)
+	    shockUrl = KBaseGeneFamiliesServer.defaultShockUrl;
 	BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
 	for (Handle h : libraryFiles) {
 	    File f = new File(libDir.getPath()+"/"+h.getFileName());
@@ -361,6 +397,13 @@ public class DomainModelLibPreparation {
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
 	WorkspaceClient rv = null;
+
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+	if (wsUrl==null)
+	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+	
 	if (token==null)
 	    rv = new WorkspaceClient(new URL(wsUrl));
 	else

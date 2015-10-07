@@ -15,7 +15,7 @@ GLASSFISH_HOME ?= $(DEPLOY_RUNTIME)/glassfish3
 ASADMIN = $(GLASSFISH_HOME)/glassfish/bin/asadmin
 ANT = ant
 
-default: compile
+default: compile build-docs
 
 deploy-all: deploy
 
@@ -27,21 +27,41 @@ test: test-all
 test-all: test-java
 
 test-client:
-	@echo "No tests for client"
+	@echo "All tests are in java; make test-java"
 
 test-service:
-	@echo "No tests for service yet"
+	@echo "All tests are in java; make test-java"
 
 test-scripts:
-	@echo "No tests for scripts"
+	@echo "No scripts"
 
-test-java:  prepare-thirdparty-dbs
+test-java:
 	$(ANT) test
 
-compile: src
+compile: download-thirdparty-bins
 	$(ANT) war
 
-src: KBaseGeneFamilies.spec
+setup-lib-dir:
+	mkdir -p lib/biokbase/$(SERVICE_NAME)
+	mkdir -p lib/javascript/$(SERVICE_NAME)
+
+compile-typespec: setup-lib-dir
+	compile_typespec \
+		--client Bio::KBase::$(SERVICE_NAME)::Client \
+		--py biokbase/$(SERVICE_NAME)/Client \
+		--js javascript/$(SERVICE_NAME)/Client \
+		--url https://kbase.us/services/gene_families \
+		$(SERVICE_NAME).spec lib
+	rm -f lib/$(SERVICE_NAME)*.py
+	rm -f lib/$(SERVICE_NAME)*.pm
+
+build-docs:
+	mkdir -p docs
+	pod2html --infile=lib/Bio/KBase/$(SERVICE_NAME)/Client.pm --outfile=docs/$(SERVICE_NAME).html
+	rm -f pod2htmd.tmp
+	$(ANT) javadoc
+
+compile-java-typespec: KBaseGeneFamilies.spec
 	./generate_java_classes.sh
 
 download-thirdparty-bins:
@@ -50,10 +70,22 @@ download-thirdparty-bins:
 prepare-thirdparty-dbs:	download-thirdparty-bins
 	./prepare_3rd_party_dbs.sh
 
-prepare-deploy-target:	prepare-thirdparty-dbs
+prepare-library-objects: prepare-thirdparty-dbs compile
+	java -jar dist/$(SERVICE_NAME).jar
+
+prepare-deploy-target:	download-thirdparty-bins
 
 deploy-client:
-	@echo "No deployment for client"
+	mkdir -p $(TARGET)/lib/Bio/KBase/$(SERVICE_NAME)
+	mkdir -p $(TARGET)/lib/biokbase/$(SERVICE_NAME)
+	mkdir -p $(TARGET)/lib/javascript/$(SERVICE_NAME)
+	touch lib/biokbase/__init__.py #do not include code in biokbase/__init__.py
+	touch lib/biokbase/$(SERVICE_NAME)/__init__.py
+	cp lib/Bio/KBase/$(SERVICE_NAME)/Client.pm $(TARGET)/lib/Bio/KBase/$(SERVICE_NAME)/.
+	cp lib/biokbase/$(SERVICE_NAME)/* $(TARGET)/lib/biokbase/$(SERVICE_NAME)/.
+	cp lib/javascript/$(SERVICE_NAME)/* $(TARGET)/lib/javascript/$(SERVICE_NAME)/.
+	cp dist/KBaseGeneFamilies.jar $(TARGET)/lib/.
+	echo "deployed clients of $(SERVICE)."
 
 deploy-service:	prepare-deploy-target
 	@echo "Service folder: $(SERVICE_DIR)"
@@ -62,7 +94,10 @@ deploy-service:	prepare-deploy-target
 	cp -f ./service/glassfish_administer_service.py $(SERVICE_DIR)
 	cp -f ./deploy.cfg $(SERVICE_DIR)
 	echo '#!/bin/sh' > $(SERVICE_DIR)/start_service
-	echo "export KB_DEPLOYMENT_CONFIG=$(SERVICE_DIR)/deploy.cfg" >> $(SERVICE_DIR)/start_service
+	echo 'if [ -z "$$KB_DEPLOYMENT_CONFIG" ]' > $(SERVICE_DIR)/start_service
+	echo 'then' >> $(SERVICE_DIR)/start_service
+	echo ' export KB_DEPLOYMENT_CONFIG=$$KB_TOP/deployment.cfg' >> $(SERVICE_DIR)/start_service
+	echo 'fi' >> $(SERVICE_DIR)/start_service
 	echo "$(SERVICE_DIR)/glassfish_administer_service.py --admin $(ASADMIN)\
 	 --domain $(SERVICE_NAME) --domain-dir $(SERVICE_DIR)/glassfish_domain\
 	 --war $(SERVICE_DIR)/KBaseGeneFamilies.war --port $(SERVICE_PORT)\
@@ -84,7 +119,7 @@ deploy-scripts:
 	@echo "No deployment for scripts"
 
 deploy-docs:
-	$(ANT) docs
+	$(ANT) javadoc
 	rsync -a ./docs $(SERVICE_DIR)
 
 clean:

@@ -35,9 +35,9 @@ import us.kbase.workspace.SubObjectIdentity;
 
 /**
    This class appears to build clusters out of DomainAnnotations.
-   It has been fixed to compile cleanly against the current spec,
-   but not otherwise tested --JMC, 12/17/14
-*/
+   As of 1/14/15, it does not compile because Clusters are commented
+   out of the typespec.
+
 public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<ConstructDomainClustersParams> {
     private static final String msaWsType = "KBaseTrees.MSA";
     private static final String domainClusterWsType = "KBaseGeneFamilies.DomainCluster";
@@ -439,3 +439,4 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 	}
     }
 }
+*/

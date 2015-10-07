@@ -20,48 +20,36 @@ import us.kbase.kbasegenefamilies.*;
 import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
-   Tests for setting up sample db and annotating E. coli locally
+   Tests for setting up sample db and annotating a self-assembled
+   genome locally
 */
-public class EColiTest {
-    private static final String genomeWsName = "KBasePublicGenomesV4";
+public class SelfAssembledTest {
+    private static final String genomeWsName = "jmc:1424372471527";
     private static final String domainWsName = "KBasePublicGeneDomains";
-    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary";
+    private static final String privateWsName = "jmc:gene_domains_test";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String ecoliRef = genomeWsName+"/kb|g.0";
+    private static final String genomeRef = genomeWsName+"/genome";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
-    private static final String allLibsRef = domainWsName+"/All";
 
     /**
-       check that we can read E coli genome from WS or file;
-       if we get from WS, cache in file to avoid delays/loading server
+       check that we can read genome from WS
     */
-    @Test public void getEColi() throws Exception {
+    @Test public void getGenome() throws Exception {
 	Genome genome = null;
 	
-	ObjectMapper mapper = new ObjectMapper();
+	System.out.println("Reading genome from WS");
+	WorkspaceClient wc = createWsClient(getDevToken());
+	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
 
-	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
-	if (f.canRead()) {
-	    System.out.println("Reading genome from file");
-	    try {
-		genome = mapper.readValue(f, Genome.class);
-	    }
-	    catch (Exception e) {
-		genome = null;
-	    }
-	}
-
-	if (genome==null) {
-	    System.out.println("Reading genome from WS");
-	    WorkspaceClient wc = createWsClient(null);
-	    genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
-	    mapper.writeValue(f,genome);
-	}
+	// save copy for debugging:
+	// ObjectMapper mapper = new ObjectMapper();
+	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
+	// mapper.writeValue(f,genome);
 	
-	System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "Escherichia coli K12");
+	// System.out.println(genome.getScientificName());
+	assertEquals(genome.getScientificName(), "c c c");
     }
 
     /**
@@ -77,11 +65,11 @@ public class EColiTest {
     }
 
     /**
-       Check that we can annotate E. coli with SMART.  This is
-       fairly fast.
+       Check that we can annotate genome with SMART.  This takes less
+       than 10 minutes on a 2-CPU Magellan instance.
     */
     @Test
-	public void searchEColiPSSM() throws Exception {
+	public void searchGenomePSSM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -92,23 +80,23 @@ public class EColiTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       smartRef,
-						       ecoliRef);
+						       genomeRef);
 
 	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
+		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("SMART-g.0-2")
+						  .withName("SMART-genome")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
     }
 
     /**
-       Check that we can annotate E. coli with TIGRFAMs.  Takes ~12 min
+       Check that we can annotate genome with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
     @Test
     */
-	public void searchEColiHMM() throws Exception {
+	public void searchGenomeHMM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -119,44 +107,15 @@ public class EColiTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       tigrRef,
-						       ecoliRef);
+						       genomeRef);
 
 	/*
 	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
+		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-g.0")
-						  .withData(new UObject(results)))));
-	*/
-    }
-
-    /**
-       Check that we can annotate E. coli with all domain libraries.
-       Takes ~65 min on a 2-CPU Magellan instance.
-    @Test
-    */
-	public void searchEColiAll() throws Exception {
-
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
-
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
-
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
-	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       allLibsRef,
-						       ecoliRef);
-
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("Alldomains-g.0")
+						  .withName("TIGR-genome")
 						  .withData(new UObject(results)))));
 	*/
     }
@@ -212,19 +171,5 @@ public class EColiTest {
 	    rv = null;
 	}
 	return rv;
-    }
-
-    private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
-	return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
-    }
-
-    public static void main(String[] args) {
-	try {
-	    EColiTest t = new EColiTest();
-	    t.getEColi();
-	}
-	catch (Exception e) {
-	    e.printStackTrace();
-	}
     }
 }

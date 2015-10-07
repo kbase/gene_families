@@ -29,7 +29,7 @@ import us.kbase.auth.TokenFormatException;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.Tuple5;
 import us.kbase.common.service.UnauthorizedException;
-import us.kbase.kbasegenefamilies.DomainAlignments;
+// import us.kbase.kbasegenefamilies.DomainAlignments;
 import us.kbase.kbasegenefamilies.DomainAnnotation;
 import us.kbase.kbasegenefamilies.DomainModel;
 import us.kbase.kbasegenefamilies.DomainSearchTask;
@@ -46,9 +46,9 @@ public class SpeciesTreePreparation {
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainModelWsType = "KBaseGeneFamilies.DomainModel";
     private static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
+    //     private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
 
-	
+    /*
     public static void main(String[] args) throws Exception {
 	File cogsDir = new File("../trees/data/cogs");
 	Set<Integer> cogCodes = loadCogsCodes(new File(cogsDir, "cog_list.txt"));
@@ -206,6 +206,7 @@ public class SpeciesTreePreparation {
 		e.printStackTrace();
 	    }
     }
+    */
 	
     private static Set<Integer> loadCogsCodes(File cogListFile) throws IOException {
 	File inputList = cogListFile;

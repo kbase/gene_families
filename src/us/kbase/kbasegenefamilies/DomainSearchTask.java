@@ -17,6 +17,7 @@ import us.kbase.common.utils.AlignUtil;
 import us.kbase.common.utils.CorrectProcess;
 import us.kbase.common.utils.FastaWriter;
 import us.kbase.common.utils.RpsBlastParser;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 import us.kbase.kbasegenefamilies.bin.BinPreparator;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.kbasegenomes.Feature;
@@ -35,11 +36,7 @@ import us.kbase.shock.client.*;
    workspace objects.
 */
 public class DomainSearchTask {
-    private static final String shockUrl = "https://kbase.us/services/shock-api/";
-
     private static String MAX_BLAST_EVALUE = "1e-04";
-    private static int MIN_COVERAGE = 50;
-    private static final int modelBufferMaxSize = 100;
 	
     public static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
     public static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
@@ -68,7 +65,7 @@ public class DomainSearchTask {
 	// collect one set of annotations per library
 	for (String id : domainLibMap.values()) {
 	    DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
-	    DomainAnnotation results = runDomainSearch(genome, genomeRef, dl);
+	    DomainAnnotation results = runDomainSearch(genome, genomeRef, domainModelSetRef, dl);
 
 	    // combine all the results into one object
 	    if (rv==null)
@@ -80,6 +77,37 @@ public class DomainSearchTask {
     }
 
     /**
+       calculate statistics to store in metadata, used for quick widget drawing
+    */
+    public static Map<String,String> getMetadata(DomainAnnotation ann) throws Exception {
+	Map<String,String> metadata = new HashMap<String,String>();
+
+	HashSet<String> domains = new HashSet<String>();
+	HashSet<String> features = new HashSet<String>();
+
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> data = ann.getData();
+	for (String contigID : data.keySet()) {
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> annElements = data.get(contigID);
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> iterator = annElements.listIterator();
+	    while (iterator.hasNext()) {
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> elements = iterator.next();
+		Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> element = elements.getE5();
+		if (element != null) {
+		    for (String key : element.keySet()) {
+			domains.add(elements.getE1());
+			features.add(key);
+		    }
+		}
+	    }
+	}
+
+	metadata.put("annotated_domains",""+domains.size());
+	metadata.put("annotated_features",""+features.size());
+
+	return metadata;
+    }
+    
+    /**
        combines annotation data from two DomainAnnotation objects;
        must be from the same genome.  Note that this will fail if
        results are in different order, or if two libraries have
@@ -89,6 +117,8 @@ public class DomainSearchTask {
 			    DomainAnnotation target) throws Exception {
 	if (!source.getGenomeRef().equals(target.getGenomeRef()))
 	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different genomes can't be combined");
+	if (!source.getUsedDmsRef().equals(target.getUsedDmsRef()))
+	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different domain model sets can't be combined");
 	
 	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> sourceData = source.getData();
 	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> targetData = target.getData();
@@ -106,12 +136,13 @@ public class DomainSearchTask {
     }
 
     /**
-       Runs a domain search on a single genome, returning annotations
-       and alignments.  Takes a map of individual models and a model
-       db file as input.
+       Runs a domain search on a single genome, returning annotations.
+       This works on a single library, but needs metadata (references
+       to Genome and DomainModelSet) to populate the annotation object.       
     */
     public DomainAnnotation runDomainSearch(Genome genome,
 					    String genomeRef,
+					    String domainModelSetRef,
 					    DomainLibrary dl) throws Exception {
 						
 	String genomeName = genome.getScientificName();
@@ -139,22 +170,30 @@ public class DomainSearchTask {
 	    int protCount = 0;
 	    final Map<Integer, Tuple2<String, Long>> posToContigFeatIndex = new LinkedHashMap<Integer, Tuple2<String, Long>>();
 	    Map<String, Tuple2<String, Long>> featIdToContigFeatIndex = new TreeMap<String, Tuple2<String, Long>>();
+	    // to work around genomes with missing contigs:
+	    HashSet<String> realContigs = new HashSet<String>();
 	    // write out each protein sequentially into a FASTA file,
-	    // keeping track of its position in the genome
+	    // keeping track of its (first) position in the genome
 	    try {
-		for (int pos = 0; pos < genome.getFeatures().size(); pos++) {
-		    Feature feat = genome.getFeatures().get(pos);
+		List<Feature> features = genome.getFeatures();
+		int pos = -1;
+		for (Feature feat : features) {
+		    pos++;
 		    String seq = feat.getProteinTranslation();
-		    if (feat.getLocation().size() != 1)
+		    if (feat.getLocation().size() < 1)
 			continue;
 		    Tuple4<String, Long, String, Long> loc = feat.getLocation().get(0);
 		    String contigId = loc.getE1();
+		    String featId = feat.getId();
+		    if ((contigId==null) || (featId==null))
+			continue;
 		    if (seq != null && !seq.isEmpty()) {
 			fw.write("" + pos, seq);
 			Tuple2<String, Long> contigFeatIndex = new Tuple2<String, Long>().withE1(contigId);
 			posToContigFeatIndex.put(pos, contigFeatIndex);
-			featIdToContigFeatIndex.put(feat.getId(), contigFeatIndex);
+			featIdToContigFeatIndex.put(featId, contigFeatIndex);
 			protCount++;
+			realContigs.add(contigId);
 		    }
 		    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
 		    if (prots == null) {
@@ -162,10 +201,20 @@ public class DomainSearchTask {
 			contig2prots.put(contigId, prots);
 		    }
 		    long start = loc.getE3().equals("-") ? (loc.getE2() - loc.getE4() + 1) : loc.getE2();
-		    long stop = loc.getE3().equals("-") ? loc.getE2() : (loc.getE2() + loc.getE4() - 1);
+		    // fake the stop site based on protein length
+		    long stop;
+		    if (seq != null)
+			stop = start - 1 + ((seq.length()+1) * 3);
+		    else {
+			// correct calculation for end of 1st exon:
+			stop = loc.getE3().equals("-") ? loc.getE2() : (loc.getE2() + loc.getE4() - 1);
+		    }
 		    long dir = loc.getE3().equals("-") ? -1 : +1;
 		    prots.add(new Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>()
-			      .withE1(feat.getId()).withE2(start).withE3(stop).withE4(dir)
+			      .withE1(feat.getId())
+			      .withE2(start)
+			      .withE3(stop)
+			      .withE4(dir)
 			      .withE5(new TreeMap<String, List<Tuple5<Long, Long, Double, Double, Double>>>()));
 		}
 	    }
@@ -175,12 +224,34 @@ public class DomainSearchTask {
 	    if (protCount == 0)
 		throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
 
-	    // make more indices
-	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
-	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
-		String contigId = genome.getContigIds().get(contigPos);
+	    // make contig-based indices
+	    HashMap<String,Long> contigLengths = new HashMap<String,Long>();
+
+	    // first, get the reported contigs from genome object
+	    List<String> genomeContigs = genome.getContigIds();
+	    List<Long> genomeContigLengths = genome.getContigLengths();
+	    int nContigs = 0;
+	    if (genomeContigs != null)
+		nContigs = genomeContigs.size();
+	    for (int contigPos = 0; contigPos < nContigs; contigPos++) {
+		String contigId = genomeContigs.get(contigPos);
 		if (!contig2prots.containsKey(contigId))
 		    continue;
+		long contigLength = 1;
+		if ((genomeContigLengths != null) &&
+		    (genomeContigLengths.size() > contigPos))
+		    contigLength = genomeContigLengths.get(contigPos).longValue();
+		contigLengths.put(contigId, new Long(contigLength));
+	    }
+	    // next, add any missing contigs as length 1
+	    for (String contigId : realContigs) {
+		if (contigLengths.get(contigId) == null)
+		    contigLengths.put(contigId, new Long(1));
+	    }
+
+	    // map contigs to "size" (both length and # of proteins)
+	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
+	    for (String contigId : contigLengths.keySet()) {
 		List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
 		Collections.sort(prots, new Comparator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>() {
 			@Override
@@ -189,13 +260,13 @@ public class DomainSearchTask {
 			    return Long.compare(o1.getE2(), o2.getE2());
 			}
 		    });
-		long contigSize = genome.getContigLengths().get(contigPos);
-		contigSizes.put(contigId, new Tuple2<Long, Long>().withE1(contigSize).withE2((long)prots.size()));
-		for (int index = 0; index < prots.size(); index++) {
-		    String featId = prots.get(index).getE1();
+		long contigLength = contigLengths.get(contigId).longValue();
+		contigSizes.put(contigId, new Tuple2<Long, Long>().withE1(contigLength).withE2((long)prots.size()));
+		for (int i=0; i<prots.size(); i++) {
+		    String featId = prots.get(i).getE1();
 		    Tuple2<String, Long> contigFeatIndex = featIdToContigFeatIndex.get(featId);
 		    if (contigFeatIndex != null)
-			contigFeatIndex.setE2((long)index);
+			contigFeatIndex.setE2((long)i);
 		}
 	    }
 
@@ -206,8 +277,14 @@ public class DomainSearchTask {
 		outFile = runRpsBlast(dbFile, fastaFile);
 		RpsBlastParser.processRpsOutput(outFile, new RpsBlastParser.RpsBlastCallback() {
 			@Override
-			    public void next(String query, String subject, int qstart, String qseq,
-					     int sstart, String sseq, String evalue, double bitscore,
+			    public void next(String query,
+					     String subject,
+					     int qstart,
+					     String qseq,
+					     int sstart,
+					     String sseq,
+					     String evalue,
+					     double bitscore,
 					     double ident) throws Exception {
 			    Long modelLength = modelNameToLength.get(subject);
 			    if (modelLength == null)
@@ -295,7 +372,6 @@ public class DomainSearchTask {
 
 				    // save this hit
 				    double coverage = (double)hLength / (double)modelLength;
-				    String alignedSeq = "TEST"; // fake alignments
 				    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
 				    long featureIndex = contigIdFeatIndex.getE2();
 				    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
@@ -325,6 +401,7 @@ public class DomainSearchTask {
 	    
 	    DomainAnnotation rv = new DomainAnnotation()
 		.withGenomeRef(genomeRef)
+		.withUsedDmsRef(domainModelSetRef)
 		.withData(contig2prots)
 		.withContigToSizeAndFeatureCount(contigSizes)
 		.withFeatureToContigAndIndex(featIdToContigFeatIndex);
@@ -337,7 +414,6 @@ public class DomainSearchTask {
 	}
     }
 
-    
     /**
        Formats a library made from a user-defined set of SMP (PSSM)
        files.  Not used by current code, which requires a pre-formatted
@@ -438,7 +514,17 @@ public class DomainSearchTask {
 	return ret;
     }
 
+    /**
+       gets all the required library files out of shock.  Only
+       supports publicly readable libraries for now (private libraries
+       cannot currently be uploaded)
+    */
     private void prepareLibraryFiles(DomainLibrary dl) throws Exception {
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String shockUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_SHOCK_SRV_URL);
+	if (shockUrl==null)
+	    shockUrl = KBaseGeneFamiliesServer.defaultShockUrl;
 	BasicShockClient client = new BasicShockClient(new URL(shockUrl));
 	File dir = getDomainsDir();
 	for (Handle h : dl.getLibraryFiles()) {

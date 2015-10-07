@@ -6,10 +6,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import us.kbase.common.service.Tuple2;
-import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder.GenomeAnnotationAlignmentProvider;
+// import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder.GenomeAnnotationAlignmentProvider;
 import us.kbase.workspace.ListObjectsParams;
 import us.kbase.workspace.ObjectIdentity;
 import us.kbase.workspace.SubObjectIdentity;
+
+/**
+   This class appears to build clusters out of DomainAnnotations.
+   As of 1/14/15, it does not compile because Clusters are commented
+   out of the typespec.
 
 public class SearchDomainsAndConstructClustersBuilder extends DefaultTaskBuilder<SearchDomainsAndConstructClustersParams> {
 
@@ -87,3 +92,4 @@ public class SearchDomainsAndConstructClustersBuilder extends DefaultTaskBuilder
 				inputData.getDomainClusterDataIdSuffix());
 	}
 }
+*/

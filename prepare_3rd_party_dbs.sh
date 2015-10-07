@@ -23,7 +23,7 @@ fi
 
 ########### TIGRFAMS #############
 if [ ! -f ../db/TIGRFAMs_15.0_HMM.LIB ]; then
-    echo "Downloading Pfam..."
+    echo "Downloading TIGRFAMs..."
     curl -o ../db/TIGRFAMs_15.0_HMM.LIB.gz 'ftp://ftp.jcvi.org/pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz'
     gzip -d ../db/TIGRFAMs_15.0_HMM.LIB.gz
     ../bin/hmmpress.$OS ../db/TIGRFAMs_15.0_HMM.LIB
