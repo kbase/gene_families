@@ -54,7 +54,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static final String CFG_PROP_TEMP_DIR = "scratch";
     public static final String CFG_PROP_DATA_DIR = "data.dir";
     
-    public static final String SERVICE_VERSION = "1.0.0";
+    public static final String SERVICE_VERSION = "1.0.1";
     public static final String SERVICE_DEPLOYMENT_NAME = "gene_families";
     public static final String SERVICE_REGISTERED_NAME = "KBaseGeneFamilies";
 
@@ -154,6 +154,8 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains")
     public String searchDomains(SearchDomainsParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
+	File f = new File("/tmp/search_domains_called");
+	f.createNewFile();
         //BEGIN search_domains
         returnVal = getTaskQueue().addTask(params, authPart.toString());
         //END search_domains
