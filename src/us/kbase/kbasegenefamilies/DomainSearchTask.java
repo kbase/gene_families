@@ -57,23 +57,37 @@ public class DomainSearchTask {
     public DomainAnnotation runDomainSearch(String token,
 					    String domainModelSetRef,
 					    String genomeRef) throws Exception {
-	final DomainModelSet dms = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
-	final Genome genome = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
-	Map<String,String> domainLibMap = dms.getDomainLibs();
-	DomainAnnotation rv = null;
+	try {
+	    ProcessBuilder pb = new ProcessBuilder("/bin/df","-h");
+	    File outputFile = new File("/tmp/debug_gene_families.txt");
+	    pb.redirectOutput(outputFile);
+	    Process p = pb.start();
+	    p.waitFor();
 
-	// collect one set of annotations per library
-	for (String id : domainLibMap.values()) {
-	    DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
-	    DomainAnnotation results = runDomainSearch(genome, genomeRef, domainModelSetRef, dl);
+	    final DomainModelSet dms = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+	    final Genome genome = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
+	    Map<String,String> domainLibMap = dms.getDomainLibs();
+	    DomainAnnotation rv = null;
 
-	    // combine all the results into one object
-	    if (rv==null)
-		rv = results;
-	    else 
-		combineData(results,rv);
+	    // collect one set of annotations per library
+	    for (String id : domainLibMap.values()) {
+		DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
+		DomainAnnotation results = runDomainSearch(genome, genomeRef, domainModelSetRef, dl);
+
+		// combine all the results into one object
+		if (rv==null)
+		    rv = results;
+		else 
+		    combineData(results,rv);
+	    }
+	    return rv;
 	}
-	return rv;
+	catch (Exception e) {
+	    PrintWriter pw = new PrintWriter((new BufferedWriter(new FileWriter("/tmp/debug_gene_families.txt", true))));
+	    e.printStackTrace(pw);
+	    pw.close();
+	    throw e;
+	}
     }
 
     /**
