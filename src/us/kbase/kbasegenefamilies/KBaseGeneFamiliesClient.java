@@ -115,7 +115,7 @@ public class KBaseGeneFamiliesClient {
      */
     public boolean isAllSSLCertificatesTrusted() {
         return caller.isAllSSLCertificatesTrusted();
-    }
+}
 
     public void _setFileForNextRpcResponse(File f) {
         caller.setFileForNextRpcResponse(f);
