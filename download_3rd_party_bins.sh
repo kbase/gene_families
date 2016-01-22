@@ -21,7 +21,7 @@ if [[ "$unamestr" == 'Linux' ]]; then
 	########### HMMER #############
 	if [ ! -f ../bin/hmmscan.linux ]; then
 		echo "Downloading hmmer..."
-		curl -o hmmer.tar.gz 'ftp://selab.janelia.org/pub/software/hmmer3/3.1b1/hmmer-3.1b1-linux-intel-x86_64.tar.gz'
+		curl -o hmmer.tar.gz 'http://eddylab.org/software/hmmer3/3.1b1/hmmer-3.1b1-linux-intel-x86_64.tar.gz'
 		tar -zxvf hmmer.tar.gz hmmer-3.1b1-linux-intel-x86_64/binaries/hmmscan hmmer-3.1b1-linux-intel-x86_64/binaries/hmmpress
 		mv ./hmmer-3.1b1-linux-intel-x86_64/binaries/hmmscan ../bin/hmmscan.linux
 		mv ./hmmer-3.1b1-linux-intel-x86_64/binaries/hmmpress ../bin/hmmpress.linux
@@ -45,7 +45,7 @@ elif [[ "$unamestr" == 'Darwin' ]]; then
 	########### HMMER #############
 	if [ ! -f ../bin/hmmscan.macosx ]; then
 		echo "Downloading hmmer..."
-		curl -o hmmer.tar.gz 'ftp://selab.janelia.org/pub/software/hmmer3/3.1b1/hmmer-3.1b1-macosx-intel.tar.gz'
+		curl -o hmmer.tar.gz 'http://eddylab.org/software/hmmer3/3.1b1/hmmer-3.1b1-macosx-intel.tar.gz'
 		tar -zxvf hmmer.tar.gz hmmer-3.1b1-macosx-intel/binaries/hmmscan hmmer-3.1b1-macosx-intel/binaries/hmmpress
 		mv ./hmmer-3.1b1-macosx-intel/binaries/hmmscan ../bin/hmmscan.macosx
 		mv ./hmmer-3.1b1-macosx-intel/binaries/hmmpress ../bin/hmmpress.macosx
