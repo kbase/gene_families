@@ -1,6 +1,5 @@
 jars
 trees
-java_common
 java_type_generator
 typecomp
 auth
