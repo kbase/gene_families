@@ -34,61 +34,72 @@ public class SelfAssembledTest {
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
     /**
-       check that we can read genome from WS
+       Check that we can start a client
     */
-    @Test public void getGenome() throws Exception {
-	Genome genome = null;
-	
-	System.out.println("Reading genome from WS");
-	WorkspaceClient wc = createWsClient(getDevToken());
-	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
+    @Test
+    public void testWC() throws Exception {
+        System.out.println("Reading genome from WS");
+        WorkspaceClient wc = createWsClient(getDevToken());
+        assertNotNull(wc);
+    }
 
-	// save copy for debugging:
-	// ObjectMapper mapper = new ObjectMapper();
-	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
-	// mapper.writeValue(f,genome);
+    /**
+       check that we can read genome from WS
+    @Test
+    */
+    public void getGenome() throws Exception {
+        Genome genome = null;
 	
-	// System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "c c c");
+        System.out.println("Reading genome from WS");
+        WorkspaceClient wc = createWsClient(getDevToken());
+        genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
+
+        // save copy for debugging:
+        // ObjectMapper mapper = new ObjectMapper();
+        // File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
+        // mapper.writeValue(f,genome);
+	
+        // System.out.println(genome.getScientificName());
+        assertEquals(genome.getScientificName(), "c c c");
     }
 
     /**
        Check that we can get the SMART-only DomainModelSet from the
        public workspace.
-    */
     @Test
+    */
     public void getSMART() throws Exception {
-	WorkspaceClient wc = createWsClient(getDevToken());
-	DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+        WorkspaceClient wc = createWsClient(getDevToken());
+        DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 
-	assertEquals(smart.getSetName(),"SMART-only");
+        assertEquals(smart.getSetName(),"SMART-only");
     }
 
     /**
        Check that we can annotate genome with SMART.  This takes less
        than 10 minutes on a 2-CPU Magellan instance.
-    */
     @Test
+    */
 	public void searchGenomePSSM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       smartRef,
-						       genomeRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       smartRef,
+                                                       genomeRef);
 
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(privateWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withName("SMART-genome")
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withData(new UObject(results)))));
+        wc.saveObjects(new SaveObjectsParams()
+                       .withWorkspace(privateWsName)
+                       .withObjects(Arrays.asList(new ObjectSaveData()
+                                                  .withType(domainAnnotationType)
+                                                  .withName("SMART-genome")
+                                                  .withMeta(DomainSearchTask.getMetadata(results))
+                                                  .withData(new UObject(results)))));
     }
 
     /**
@@ -98,26 +109,26 @@ public class SelfAssembledTest {
     */
 	public void searchGenomeHMM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       tigrRef,
-						       genomeRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       tigrRef,
+                                                       genomeRef);
 
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(privateWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-genome")
-						  .withData(new UObject(results)))));
-	*/
+        /*
+          wc.saveObjects(new SaveObjectsParams()
+          .withWorkspace(privateWsName)
+          .withObjects(Arrays.asList(new ObjectSaveData()
+          .withType(domainAnnotationType)
+          .withMeta(DomainSearchTask.getMetadata(results))
+          .withName("TIGR-genome")
+          .withData(new UObject(results)))));
+        */
     }
 
     /**
@@ -125,20 +136,20 @@ public class SelfAssembledTest {
        only read public workspaces
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
-	WorkspaceClient rv = null;
+        WorkspaceClient rv = null;
 
-	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
-	Map<String,String> props = cfg.getAllConfigProps();
-	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
-	if (wsUrl==null)
-	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+        TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+        Map<String,String> props = cfg.getAllConfigProps();
+        String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+        if (wsUrl==null)
+            wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
 	
-	if (token==null)
-	    rv = new WorkspaceClient(new URL(wsUrl));
-	else
-	    rv = new WorkspaceClient(new URL(wsUrl),token);
-	rv.setAuthAllowedForHttp(true);
-	return rv;
+        if (token==null)
+            rv = new WorkspaceClient(new URL(wsUrl));
+        else
+            rv = new WorkspaceClient(new URL(wsUrl),token);
+        rv.setAuthAllowedForHttp(true);
+        return rv;
     }
 
     /**
@@ -153,23 +164,23 @@ public class SelfAssembledTest {
        in the file that says "paste token here" with your token.
     */
     public static AuthToken getDevToken() {
-	AuthToken rv = null;
-	Properties prop = new Properties();
-	try {
-	    prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
-	}
-	catch (IOException e) {
-	}
-	catch (SecurityException e) {
-	}
-	try {
-	    String value = prop.getProperty("auth.token", null);
-	    rv = new AuthToken(value);
-	}
-	catch (Exception e) {
-	    System.out.println(e.getMessage());
-	    rv = null;
-	}
-	return rv;
+        AuthToken rv = null;
+        Properties prop = new Properties();
+        try {
+            prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
+        }
+        catch (IOException e) {
+        }
+        catch (SecurityException e) {
+        }
+        try {
+            String value = prop.getProperty("auth.token", null);
+            rv = new AuthToken(value);
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            rv = null;
+        }
+        return rv;
     }
 }

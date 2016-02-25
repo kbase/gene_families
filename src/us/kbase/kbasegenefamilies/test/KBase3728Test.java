@@ -20,17 +20,17 @@ import us.kbase.kbasegenefamilies.*;
 import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
-   Tests for setting up sample db and annotating a self-assembled
-   genome locally
+   Test bug reported here: https://atlassian.kbase.us/browse/KBASE-3728
 */
-public class SelfAssembled2Test {
-    private static final String privateWsName = "jmc:gene_domains_test";
+public class KBase3728Test {
+    private static final String privateWsName = "jmc:1456427221120";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String genomeRef = privateWsName+"/genome2";
+    private static final String genomeRef = privateWsName+"/Mycoplasma_mobile_annotated";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
+    private static final String allRef = domainWsName+"/All";
 
     /**
        Check that we can start a client
@@ -44,8 +44,8 @@ public class SelfAssembled2Test {
 
     /**
        check that we can read genome from WS
-       @Test
     */
+    @Test
     public void getGenome() throws Exception {
         Genome genome = null;
 	
@@ -59,14 +59,14 @@ public class SelfAssembled2Test {
         // mapper.writeValue(f,genome);
 	
         // System.out.println(genome.getScientificName());
-        assertEquals(genome.getScientificName(), "Desulfovibrio frigidus DSM 17176");
+        assertEquals(genome.getScientificName(), "Mycoplasma mobile 163K");
     }
 
     /**
        Check that we can get the SMART-only DomainModelSet from the
        public workspace.
-       @Test
     */
+    @Test
     public void getSMART() throws Exception {
         WorkspaceClient wc = createWsClient(getDevToken());
         DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
@@ -77,8 +77,8 @@ public class SelfAssembled2Test {
     /**
        Check that we can annotate genome with SMART.  This takes less
        than 10 minutes on a 2-CPU Magellan instance.
-       @Test
     */
+    @Test
     public void searchGenomePSSM() throws Exception {
 
         AuthToken token = getDevToken();
@@ -97,15 +97,15 @@ public class SelfAssembled2Test {
                        .withObjects(Arrays.asList(new ObjectSaveData()
                                                   .withType(domainAnnotationType)
                                                   .withMeta(DomainSearchTask.getMetadata(results))
-                                                  .withName("SMART-genome2")
+                                                  .withName("SMART-mycoplasma")
                                                   .withData(new UObject(results)))));
     }
 
     /**
        Check that we can annotate genome with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
-    @Test
     */
+    @Test
     public void searchGenomeHMM() throws Exception {
 
         AuthToken token = getDevToken();
@@ -123,10 +123,35 @@ public class SelfAssembled2Test {
                        .withObjects(Arrays.asList(new ObjectSaveData()
                                                   .withType(domainAnnotationType)
                                                   .withMeta(DomainSearchTask.getMetadata(results))
-                                                  .withName("TIGR-genome2")
+                                                  .withName("TIGR-mycoplasma")
                                                   .withData(new UObject(results)))));
     }
 
+    /**
+       Check that we can annotate genome with all families.
+    @Test
+    */
+    public void searchGenomeAll() throws Exception {
+
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
+
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+	
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       allRef,
+                                                       genomeRef);
+        wc.saveObjects(new SaveObjectsParams()
+                       .withWorkspace(privateWsName)
+                       .withObjects(Arrays.asList(new ObjectSaveData()
+                                                  .withType(domainAnnotationType)
+                                                  .withMeta(DomainSearchTask.getMetadata(results))
+                                                  .withName("AllDomains-mycoplasma")
+                                                  .withData(new UObject(results)))));
+    }
+    
     /**
        creates a workspace client; if token is null, client can
        only read public workspaces

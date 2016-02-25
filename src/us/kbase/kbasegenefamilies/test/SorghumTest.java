@@ -35,20 +35,21 @@ public class SorghumTest {
     /**
        check that we can read sorghum genome from WS
     */
-    @Test public void getSorghum() throws Exception {
-	Genome genome = null;
+    @Test
+    public void getSorghum() throws Exception {
+        Genome genome = null;
 	
-	System.out.println("Reading genome from WS");
-	WorkspaceClient wc = createWsClient(null);
-	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(sorghumRef))).get(0).getData().asClassInstance(Genome.class);
+        System.out.println("Reading genome from WS");
+        WorkspaceClient wc = createWsClient(null);
+        genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(sorghumRef))).get(0).getData().asClassInstance(Genome.class);
 
-	// save copy for debugging:
-	// ObjectMapper mapper = new ObjectMapper();
-	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
-	// mapper.writeValue(f,genome);
+        // save copy for debugging:
+        // ObjectMapper mapper = new ObjectMapper();
+        // File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
+        // mapper.writeValue(f,genome);
 	
-	System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "Sorghum bicolor");
+        System.out.println(genome.getScientificName());
+        assertEquals(genome.getScientificName(), "Sorghum bicolor");
     }
 
     /**
@@ -57,10 +58,10 @@ public class SorghumTest {
     */
     @Test
     public void getSMART() throws Exception {
-	WorkspaceClient wc = createWsClient(getDevToken());
-	DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+        WorkspaceClient wc = createWsClient(getDevToken());
+        DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 
-	assertEquals(smart.getSetName(),"SMART-only");
+        assertEquals(smart.getSetName(),"SMART-only");
     }
 
     /**
@@ -68,57 +69,57 @@ public class SorghumTest {
        than 10 minutes on a 2-CPU Magellan instance.
        @Test
     */
-	public void searchSorghumPSSM() throws Exception {
+    public void searchSorghumPSSM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       smartRef,
-						       sorghumRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       smartRef,
+                                                       sorghumRef);
 
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(privateWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withName("SMART-sorghum")
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withData(new UObject(results)))));
-	*/
+        /*
+          wc.saveObjects(new SaveObjectsParams()
+          .withWorkspace(privateWsName)
+          .withObjects(Arrays.asList(new ObjectSaveData()
+          .withType(domainAnnotationType)
+          .withName("SMART-sorghum")
+          .withMeta(DomainSearchTask.getMetadata(results))
+          .withData(new UObject(results)))));
+        */
     }
 
     /**
        Check that we can annotate sorghum with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
-    @Test
+       @Test
     */
-	public void searchSorghumHMM() throws Exception {
+    public void searchSorghumHMM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       tigrRef,
-						       sorghumRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       tigrRef,
+                                                       sorghumRef);
 
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(privateWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-sorghum")
-						  .withData(new UObject(results)))));
-	*/
+        /*
+          wc.saveObjects(new SaveObjectsParams()
+          .withWorkspace(privateWsName)
+          .withObjects(Arrays.asList(new ObjectSaveData()
+          .withType(domainAnnotationType)
+          .withMeta(DomainSearchTask.getMetadata(results))
+          .withName("TIGR-sorghum")
+          .withData(new UObject(results)))));
+        */
     }
 
     /**
@@ -126,20 +127,20 @@ public class SorghumTest {
        only read public workspaces
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
-	WorkspaceClient rv = null;
+        WorkspaceClient rv = null;
 
-	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
-	Map<String,String> props = cfg.getAllConfigProps();
-	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
-	if (wsUrl==null)
-	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+        TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+        Map<String,String> props = cfg.getAllConfigProps();
+        String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+        if (wsUrl==null)
+            wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
 	
-	if (token==null)
-	    rv = new WorkspaceClient(new URL(wsUrl));
-	else
-	    rv = new WorkspaceClient(new URL(wsUrl),token);
-	rv.setAuthAllowedForHttp(true);
-	return rv;
+        if (token==null)
+            rv = new WorkspaceClient(new URL(wsUrl));
+        else
+            rv = new WorkspaceClient(new URL(wsUrl),token);
+        rv.setAuthAllowedForHttp(true);
+        return rv;
     }
 
     /**
@@ -154,23 +155,23 @@ public class SorghumTest {
        in the file that says "paste token here" with your token.
     */
     public static AuthToken getDevToken() {
-	AuthToken rv = null;
-	Properties prop = new Properties();
-	try {
-	    prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
-	}
-	catch (IOException e) {
-	}
-	catch (SecurityException e) {
-	}
-	try {
-	    String value = prop.getProperty("auth.token", null);
-	    rv = new AuthToken(value);
-	}
-	catch (Exception e) {
-	    System.out.println(e.getMessage());
-	    rv = null;
-	}
-	return rv;
+        AuthToken rv = null;
+        Properties prop = new Properties();
+        try {
+            prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
+        }
+        catch (IOException e) {
+        }
+        catch (SecurityException e) {
+        }
+        try {
+            String value = prop.getProperty("auth.token", null);
+            rv = new AuthToken(value);
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            rv = null;
+        }
+        return rv;
     }
 }
