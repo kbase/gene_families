@@ -37,31 +37,32 @@ public class EColiTest {
        check that we can read E coli genome from WS or file;
        if we get from WS, cache in file to avoid delays/loading server
     */
-    @Test public void getEColi() throws Exception {
-	Genome genome = null;
+    @Test
+    public void getEColi() throws Exception {
+        Genome genome = null;
 	
-	ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
 
-	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
-	if (f.canRead()) {
-	    System.out.println("Reading genome from file");
-	    try {
-		genome = mapper.readValue(f, Genome.class);
-	    }
-	    catch (Exception e) {
-		genome = null;
-	    }
-	}
+        File f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
+        if (f.canRead()) {
+            System.out.println("Reading genome from file");
+            try {
+                genome = mapper.readValue(f, Genome.class);
+            }
+            catch (Exception e) {
+                genome = null;
+            }
+        }
 
-	if (genome==null) {
-	    System.out.println("Reading genome from WS");
-	    WorkspaceClient wc = createWsClient(null);
-	    genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
-	    mapper.writeValue(f,genome);
-	}
+        if (genome==null) {
+            System.out.println("Reading genome from WS");
+            WorkspaceClient wc = createWsClient(null);
+            genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
+            mapper.writeValue(f,genome);
+        }
 	
-	System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "Escherichia coli K12");
+        System.out.println(genome.getScientificName());
+        assertEquals(genome.getScientificName(), "Escherichia coli K12");
     }
 
     /**
@@ -70,10 +71,10 @@ public class EColiTest {
     */
     @Test
     public void getSMART() throws Exception {
-	WorkspaceClient wc = createWsClient(getDevToken());
-	DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+        WorkspaceClient wc = createWsClient(getDevToken());
+        DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 
-	assertEquals(smart.getSetName(),"SMART-only");
+        assertEquals(smart.getSetName(),"SMART-only");
     }
 
     /**
@@ -81,84 +82,84 @@ public class EColiTest {
        fairly fast.
     */
     @Test
-	public void searchEColiPSSM() throws Exception {
+    public void searchEColiPSSM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       smartRef,
-						       ecoliRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       smartRef,
+                                                       ecoliRef);
 
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withName("SMART-g.0-2")
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withData(new UObject(results)))));
+        wc.saveObjects(new SaveObjectsParams()
+                       .withWorkspace(domainWsName)
+                       .withObjects(Arrays.asList(new ObjectSaveData()
+                                                  .withType(domainAnnotationType)
+                                                  .withName("SMART-g.0-2")
+                                                  .withMeta(DomainSearchTask.getMetadata(results))
+                                                  .withData(new UObject(results)))));
     }
 
     /**
        Check that we can annotate E. coli with TIGRFAMs.  Takes ~12 min
        on a 2-CPU Magellan instance.
-    @Test
+       @Test
     */
-	public void searchEColiHMM() throws Exception {
+    public void searchEColiHMM() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       tigrRef,
-						       ecoliRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       tigrRef,
+                                                       ecoliRef);
 
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-g.0")
-						  .withData(new UObject(results)))));
-	*/
+        /*
+          wc.saveObjects(new SaveObjectsParams()
+          .withWorkspace(domainWsName)
+          .withObjects(Arrays.asList(new ObjectSaveData()
+          .withType(domainAnnotationType)
+          .withMeta(DomainSearchTask.getMetadata(results))
+          .withName("TIGR-g.0")
+          .withData(new UObject(results)))));
+        */
     }
 
     /**
        Check that we can annotate E. coli with all domain libraries.
        Takes ~65 min on a 2-CPU Magellan instance.
-    @Test
+       @Test
     */
-	public void searchEColiAll() throws Exception {
+    public void searchEColiAll() throws Exception {
 
-	AuthToken token = getDevToken();
-	WorkspaceClient wc = createWsClient(token);
+        AuthToken token = getDevToken();
+        WorkspaceClient wc = createWsClient(token);
 
-	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+        ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
 
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+        DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainAnnotation results = dst.runDomainSearch(token.toString(),
-						       allLibsRef,
-						       ecoliRef);
+        DomainAnnotation results = dst.runDomainSearch(token.toString(),
+                                                       allLibsRef,
+                                                       ecoliRef);
 
-	/*
-	wc.saveObjects(new SaveObjectsParams()
-		       .withWorkspace(domainWsName)
-		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainAnnotationType)
-						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("Alldomains-g.0")
-						  .withData(new UObject(results)))));
-	*/
+        /*
+          wc.saveObjects(new SaveObjectsParams()
+          .withWorkspace(domainWsName)
+          .withObjects(Arrays.asList(new ObjectSaveData()
+          .withType(domainAnnotationType)
+          .withMeta(DomainSearchTask.getMetadata(results))
+          .withName("Alldomains-g.0")
+          .withData(new UObject(results)))));
+        */
     }
 
     /**
@@ -166,20 +167,20 @@ public class EColiTest {
        only read public workspaces
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
-	WorkspaceClient rv = null;
+        WorkspaceClient rv = null;
 
-	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
-	Map<String,String> props = cfg.getAllConfigProps();
-	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
-	if (wsUrl==null)
-	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+        TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+        Map<String,String> props = cfg.getAllConfigProps();
+        String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+        if (wsUrl==null)
+            wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
 	
-	if (token==null)
-	    rv = new WorkspaceClient(new URL(wsUrl));
-	else
-	    rv = new WorkspaceClient(new URL(wsUrl),token);
-	rv.setAuthAllowedForHttp(true);
-	return rv;
+        if (token==null)
+            rv = new WorkspaceClient(new URL(wsUrl));
+        else
+            rv = new WorkspaceClient(new URL(wsUrl),token);
+        rv.setAuthAllowedForHttp(true);
+        return rv;
     }
 
     /**
@@ -194,37 +195,37 @@ public class EColiTest {
        in the file that says "paste token here" with your token.
     */
     public static AuthToken getDevToken() {
-	AuthToken rv = null;
-	Properties prop = new Properties();
-	try {
-	    prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
-	}
-	catch (IOException e) {
-	}
-	catch (SecurityException e) {
-	}
-	try {
-	    String value = prop.getProperty("auth.token", null);
-	    rv = new AuthToken(value);
-	}
-	catch (Exception e) {
-	    System.out.println(e.getMessage());
-	    rv = null;
-	}
-	return rv;
+        AuthToken rv = null;
+        Properties prop = new Properties();
+        try {
+            prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
+        }
+        catch (IOException e) {
+        }
+        catch (SecurityException e) {
+        }
+        try {
+            String value = prop.getProperty("auth.token", null);
+            rv = new AuthToken(value);
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            rv = null;
+        }
+        return rv;
     }
 
     private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
-	return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
+        return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
     }
 
     public static void main(String[] args) {
-	try {
-	    EColiTest t = new EColiTest();
-	    t.getEColi();
-	}
-	catch (Exception e) {
-	    e.printStackTrace();
-	}
+        try {
+            EColiTest t = new EColiTest();
+            t.getEColi();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
