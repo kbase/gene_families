@@ -51,6 +51,7 @@ public class ShockLibraryTest {
         String shockUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_SHOCK_SRV_URL);
         if (shockUrl==null)
             shockUrl = KBaseGeneFamiliesServer.defaultShockUrl;
+        System.out.println("Shock url is "+shockUrl);
         BasicShockClient client = new BasicShockClient(new URL(shockUrl));
         DomainModelSet dms = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(allRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 
@@ -60,7 +61,7 @@ public class ShockLibraryTest {
             DomainLibrary dl = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
             System.out.println("Testing shock files for "+dl.getSource()+" "+dl.getVersion());
             for (Handle h : dl.getLibraryFiles()) {
-                System.out.println("  testing "+h.getFileName());
+                System.out.println("  testing "+h.getFileName()+", "+h.getShockId());
                 File f = new File("/tmp/"+h.getFileName());
                 OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
                 client.getFile(new ShockNodeId(h.getShockId()),os);
