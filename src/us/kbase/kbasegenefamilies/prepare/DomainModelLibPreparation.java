@@ -247,7 +247,7 @@ public class DomainModelLibPreparation {
 	    String shockNodeID = sn.getId().getId();
 	    String user = token.getClientId();
 	    // this makes it world-readable:
-	    client.removeFromNodeAcl(sn.getId(), Arrays.asList(user), new ShockACLType(ShockACLType.READ));
+	    client.removeFromNodeAcl(sn.getId(), Arrays.asList(user), ShockACLType.READ);
 	    h.setShockId(shockNodeID);
 	}
 	
